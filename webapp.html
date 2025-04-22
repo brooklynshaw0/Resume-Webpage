@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url(assets/img/fadedpinstripes.jpeg);
+            margin: 0;
+        }
+        .game-container {
+            text-align: center;
+            border: 2px solid #333;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: white;
+            width: 400px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .word-container {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .word-box {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            border: 1px solid #333;
+            text-align: center;
+            line-height: 50px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .score-board {
+            margin-top: 20px;
+        }
+        .input-box {
+            width: 100px;
+            padding: 10px;
+            font-size: 15px;
+            text-align: left;
+        }
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Wordle Game</h1>
+        <div id="wordDisplay" class="word-container">
+            <!-- The computer's word will be shown here -->
+        </div>
+        <div class="score-board">
+            <p>Player Score: <span id="playerScore">0</span></p>
+            <p>Computer Score: <span id="computerScore">0</span></p>
+        </div>
+        <input id="userInput" class="input-box" type="text" maxlength="5" placeholder="type guess..." />
+        <button id="submitGuess" class="button">Submit Guess</button>
+        <div class="result" id="result"></div>
+        <div id="gameMessage" class="result"></div>
+        <div id="guessResults"></div>
+    </div>
+
+    <script>
+        const words = ['apple', 'grape', 'peach', 'melon', 'berry']; // List of words for the game
+        let computerWord = '';
+        let playerScore = 0;
+        let computerScore = 0;
+        let guessCount = 0;
+        let maxGuesses = 5;
+        let guesses = [];
+
+        function generateWord() {
+            const randomIndex = Math.floor(Math.random() * words.length);
+            return words[randomIndex];
+        }
+
+        function displayWord() {
+            const wordContainer = document.getElementById('wordDisplay');
+            wordContainer.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const letterBox = document.createElement('div');
+                letterBox.classList.add('word-box');
+                letterBox.textContent = '_';
+                wordContainer.appendChild(letterBox);
+            }
+        }
+
+        function checkGuess(userGuess) {
+            let resultMessage = '';
+            let correctPosition = [];
+            let correctLetter = [];
+
+            // Check for correct letters in the correct position
+            for (let i = 0; i < userGuess.length; i++) {
+                if (userGuess[i] === computerWord[i]) {
+                    correctPosition.push(i);
+                }
+            }
+
+            // Check for correct letters but in the wrong position
+            for (let i = 0; i < userGuess.length; i++) {
+                if (userGuess[i] !== computerWord[i] && computerWord.includes(userGuess[i])) {
+                    correctLetter.push(i);
+                }
+            }
+
+            // Build the result message
+            for (let i = 0; i < userGuess.length; i++) {
+                if (correctPosition.includes(i)) {
+                    resultMessage += `<span style="color: green;">${userGuess[i]}</span>`; // Correct letter, correct position
+                } else if (correctLetter.includes(i)) {
+                    resultMessage += `<span style="color: orange;">${userGuess[i]}</span>`; // Correct letter, wrong position
+                } else {
+                    resultMessage += `<span style="color: red;">${userGuess[i]}</span>`; // Incorrect letter
+                }
+            }
+
+            return resultMessage;
+        }
+
+        function updateGameMessage() {
+            if (playerScore === 3) {
+                document.getElementById('gameMessage').textContent = "Congratulations! You won the game!";
+                resetGame();
+            } else if (computerScore === 3) {
+                document.getElementById('gameMessage').textContent = "Computer won! Better luck next time!";
+                resetGame();
+            }
+        }
+
+        function resetGame() {
+            playerScore = 0;
+            computerScore = 0;
+            guessCount = 0;
+            document.getElementById('playerScore').textContent = playerScore;
+            document.getElementById('computerScore').textContent = computerScore;
+            setTimeout(startNewRound, 2000);
+        }
+
+        function startNewRound() {
+            computerWord = generateWord();
+            displayWord();
+            document.getElementById('result').textContent = '';
+            document.getElementById('gameMessage').textContent = '';
+            document.getElementById('guessResults').innerHTML = '';
+            guesses = [];
+        }
+
+        document.getElementById('submitGuess').addEventListener('click', function() {
+            const userInput = document.getElementById('userInput').value.toLowerCase();
+            if (userInput.length === 5) {
+                if (guesses.length < maxGuesses) {
+                    guesses.push(userInput);
+                    const guessResult = checkGuess(userInput);
+                    document.getElementById('guessResults').innerHTML += `<p>Guess ${guesses.length}: ${guessResult}</p>`;
+                    guessCount++;
+
+                    if (userInput === computerWord) {
+                        playerScore++;
+                        document.getElementById('playerScore').textContent = playerScore;
+                        document.getElementById('result').textContent = "Correct! You've guessed the word!";
+                        updateGameMessage();
+                    } else {
+                        computerScore++;
+                        document.getElementById('computerScore').textContent = computerScore;
+                    }
+                }
+            } else {
+                alert("Please enter a 5-letter word.");
+            }
+
+            if (guessCount >= maxGuesses) {
+                document.getElementById('result').textContent = `You've used all your guesses! The word was: ${computerWord}`;
+                updateGameMessage();
+            }
+        });
+
+        startNewRound(); // Start the first round when the page loads
+    </script>
+</body>
+</html>
+
